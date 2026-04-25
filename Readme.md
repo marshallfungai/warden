@@ -1,11 +1,37 @@
+
 # Warden: Lightweight Deployment Orchestrator  
-*A modular, container-native system for zero-downtime deployments — built for resilience, simplicity, and remote operation.*
+*A modular, container-native system for zero-downtime deployments — built for resilience, simplicity, and remote 
+operation.
 
 ## Overview
-Warden is a self-contained Python toolkit that implements core orchestration patterns (blue/green deployment, health checking, state management) using open-source tools only — no cloud vendor lock-in.
+Lightweight Python orchestrator for container deployment workflows, focused on health-aware rollout logic, Docker integration, and deployment state tracking.
 
-Designed for environments where reliability, auditability, and offline operability matter — such as humanitarian tech, field-deployed systems, or sovereign infrastructure projects.
+## Project Goal
 
+Warden is an engineering sandbox for building practical orchestration patterns:
+
+- Docker container lifecycle management
+- Registry authentication and image pull flows
+- Health check + retry behavior
+- Redis-backed deployment state
+- Nginx config primitives for traffic switching
+
+The project is designed to stay simple, inspectable, and portable.
+
+## Current Status
+
+Warden is under active development. Core modules exist and are being hardened through iterative refactoring and tests.
+
+- Architecture: modular packages under `warden/`
+- Runtime target: local Docker/Docker Compose
+- Tests: basic tests present in `tests/`
+- Focus right now: API contract stability and end-to-end reliability
+
+## Repository Layout
+
+Planned project layout (work in progress; some files are being added):
+
+```text
 warden/
 ├── warden/
 │   ├── __init__.py
@@ -17,7 +43,7 @@ warden/
 │   ├── docker/
 │   │   ├── client.py
 │   │   ├── registry.py
-│   │   └── container.py          # Creates containers dynamically
+│   │   └── container.py
 │   ├── health/
 │   │   ├── checker.py
 │   │   └── endpoints.py
@@ -40,28 +66,54 @@ warden/
 ├── requirements.txt
 ├── setup.py
 ├── Makefile
-└── README.md
+└── Readme.md
+```
 
+## Core Components
 
-## Key Features
-- ✅ **Zero-downtime deployments** via blue/green switching  
-- ✅ **Health-aware rollout** with retry & timeout logic  
-- ✅ **State persistence** using Redis (with graceful fallback)  
-- ✅ **Config-driven routing** (nginx integration)  
-- ✅ **CLI + Docker-ready** — runs anywhere, including air-gapped setups  
-- ✅ **Modular design** — each component (Docker, Health, Nginx, State) is independently testable
+- `warden/docker/client.py`: low-level Docker operations (create/get/start/stop/remove/logs/network)
+- `warden/docker/container.py`: container instance lifecycle orchestration
+- `warden/docker/registry.py`: registry login and pull behavior
+- `warden/health/checker.py`: HTTP health checks with retry/delay logic
+- `warden/health/endpoints.py`: framework-specific health endpoint helpers
+- `warden/core/state.py`: deployment state persistence in Redis
 
 ## Tech Stack
-- Python 3.9+  
-- `docker-py`, `redis`, `requests`, `watchdog`, `flask` (optional)  
-- No external dependencies beyond standard Linux containers
 
-## Why This Matters for Global Development
-UNOPS builds infrastructure to support sustainable development in challenging contexts. Warden reflects the same principles:
-> *“Robust, maintainable, and deployable anywhere”* — critical for field operations, low-bandwidth regions, or multi-jurisdictional deployments.
+- Python 3.x
+- Docker SDK for Python (`docker`)
+- `requests`
+- `redis`
+- Docker / Docker Compose
 
-This project demonstrates systems thinking, operational discipline, and infrastructure ownership — skills directly aligned with UNOPS’s mission of delivering vital support to people in need.
+## Local Development
 
----
+### 1) Clone and enter the project
 
-🔗 [GitHub Repo] • 📄 [Design Doc] • 🧪 `test_phase1.py` → `test_phase8.py` included
+```bash
+git clone <your-repo-url>
+cd Warden
+```
+
+### 2) Start supporting services
+
+```bash
+docker compose up -d
+```
+
+### 3) Run tests
+
+```bash
+pytest
+```
+
+## Roadmap (Near Term)
+
+- Stabilize method contracts across Docker, Registry, and State modules
+- Expand tests for health, state, and orchestrator flows
+- Add a reproducible end-to-end demo path
+- Improve logging and failure diagnostics
+
+## License
+
+`Apache-2.0`

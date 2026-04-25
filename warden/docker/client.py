@@ -3,7 +3,6 @@ Docker client wrapper
 """
 
 import docker
-import os
 import logging
 from typing import Dict, List, Optional
 from docker.models.containers import Container
@@ -33,7 +32,7 @@ class DockerClient:
         if not network:
             logger.error(f"Error creating container {name}: Network {network} not found")
             return None
-            
+
         ports = port_mapping or None
         try:
             return self.client.containers.create(
@@ -65,7 +64,7 @@ class DockerClient:
             logger.error(f"Error getting container {name}: {e}")
             return None
     
-    def logs(self, name:str, tag:s)->bytes | None:
+    def logs(self, name:str, tag:str="latest")->bytes | None:
         """Get container logs"""
         try:
             container = self.get(name)

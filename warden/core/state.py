@@ -50,7 +50,7 @@ class DeploymentState:
     def set_active(self, color:str):
         """Set active service color (blue or green)"""
         if self.redis.client.ping():
-            self.redis.client.set(self._get_redis_key("active"), color)
+            self.redis_client.set(self._get_redis_key("active"), color)
         else:
             logger.error("Redis client is not connected")
             raise Exception("Redis client is not connected")

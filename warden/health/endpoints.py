@@ -2,6 +2,11 @@
 Supported Health Check Endpoints
 """
 
+from typing import Dict, Any
+import logging
+
+logger = logging.getLogger(__name__)
+
 class HealthEndpoints:
     """Common health check endpoints"""
 
@@ -20,15 +25,15 @@ class HealthEndpoints:
     def get_health_endpoint(framework: str) -> str:
         """Get default health endpoint for a framework"""
         endpoints = {
-            "nextjs": HealthEndpoint.NEXTJS,
-            "php": HealthEndpoint.PHP_GATEWAY,
-            "fastapi": HealthEndpoint.FASTAPI,
-            "flask": HealthEndpoint.FLASK,
-            "express": HealthEndpoint.EXPRESS,
-            "spring": HealthEndpoint.SPRING,
-            "rails": HealthEndpoint.RAILS,
+            "nextjs": HealthEndpoints.NEXTJS,
+            "php": HealthEndpoints.PHP_GATEWAY,
+            "fastapi": HealthEndpoints.FASTAPI,
+            "flask": HealthEndpoints.FLASK,
+            "express": HealthEndpoints.EXPRESS,
+            "spring": HealthEndpoints.SPRING,
+            "rails": HealthEndpoints.RAILS,
         }
-        return endpoints.get(framework.lower(), HealthEndpoint.NEXTJS)
+        return endpoints.get(framework.lower(), HealthEndpoints.NEXTJS)
 
     def parse_health_response(data: Dict[str, Any]) -> bool:
         """
