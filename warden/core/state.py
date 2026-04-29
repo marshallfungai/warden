@@ -19,7 +19,7 @@ class DeploymentState:
      This allows us to track the state of the deployment and rollback to a previous version if needed.
     """
 
-    def __init__(self, app_name:str = "warden"):
+    def __init__(self, app_name:str = "demo-app"):
         self.app_name = app_name
         self.redis_client = self._get_redis_client()
 

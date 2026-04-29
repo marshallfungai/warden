@@ -2,35 +2,37 @@
 Docker client wrapper
 """
 
-import docker
 import logging
 from typing import Dict, List, Optional
+
+import docker
 from docker.models.containers import Container
 
 logger = logging.getLogger(__name__)
 
+
 class DockerClient:
-    
     def __init__(self):
         self.client = docker.from_env()
         logger.info("Docker client initialized")
 
     def create(
-        self, 
-        name:str, 
-        image:str, 
-        tags:str = "latest", 
-        port_mapping: Optional[Dict[int, int]] = None, 
-        environment:Optional[dict]=None, 
-        volumes:Optional[dict]=None,
-        network:str="warden-network"
-        )->Container | None:
-
+        self,
+        name: str,
+        image: str,
+        tags: str = "latest",
+        port_mapping: Optional[Dict[int, int]] = None,
+        environment: Optional[dict] = None,
+        volumes: Optional[dict] = None,
+        network: str = "warden-network",
+    ) -> Container | None:
         """Create a new container"""
-        
+
         network = self.network(network)
         if not network:
-            logger.error(f"Error creating container {name}: Network {network} not found")
+            logger.error(
+                f"Error creating container {name}: Network {network} not found"
+            )
             return None
 
         ports = port_mapping or None
@@ -54,17 +56,17 @@ class DockerClient:
             return None
         return container.status
 
-    def get(self, name:str)->Container | None:
+    def get(self, name: str) -> Container | None:
         """Get container by name"""
         try:
             return self.client.containers.get(name)
         except docker.errors.NotFound:
-            return None    
+            return None
         except docker.errors.APIError as e:
             logger.error(f"Error getting container {name}: {e}")
             return None
-    
-    def logs(self, name:str, tag:str="latest")->bytes | None:
+
+    def logs(self, name: str, tag: str = "latest") -> bytes | None:
         """Get container logs"""
         try:
             container = self.get(name)
@@ -75,7 +77,7 @@ class DockerClient:
             logger.error(f"Error getting logs for container {name}: {e}")
             return None
 
-    def start(self, name:str)->bool:
+    def start(self, name: str) -> bool:
         """Start a container"""
         try:
             container = self.get(name)
@@ -87,8 +89,7 @@ class DockerClient:
             logger.error(f"Error starting container {name}: {e}")
             return False
 
-
-    def stop(self, name: str)->bool:
+    def stop(self, name: str) -> bool:
         """Stop a container"""
         try:
             container = self.get(name)
@@ -112,7 +113,7 @@ class DockerClient:
             logger.error(f"Error removing container {name}: {e}")
             return False
 
-    def ports(self, name:str)->List[int]:
+    def ports(self, name: str) -> List[int]:
         """Get container ports"""
         try:
             container = self.get(name)
@@ -130,7 +131,7 @@ class DockerClient:
             logger.error(f"Error getting ports for container {name}: {e}")
             return []
 
-    def network(self, name:str)->str:
+    def network(self, name: str) -> str:
         """Ensure network exists"""
         try:
             return self.client.networks.get(name)
@@ -139,4 +140,3 @@ class DockerClient:
         except docker.errors.APIError as e:
             logger.error(f"Error getting network {name}: {e}")
             return None
-

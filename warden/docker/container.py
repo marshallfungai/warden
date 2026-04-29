@@ -32,9 +32,9 @@ class ContainerInstance:
         self.environment = environment if environment else {}
         self.volumes = volumes if volumes else {}
         self.tags = tags
-
+        self.network = network
         logger.info("Container Instance initialized")
-        self._create_container(name, image, tags, recreate, port_mapping, environment, volumes, network)
+        self._create_container(name, image, tags, recreate, port_mapping, environment, volumes, self.network)
 
     
     def _create_container(
@@ -45,7 +45,8 @@ class ContainerInstance:
         recreate:bool=False,
         port_mapping: Optional[Dict[int, int]] = None,
         environment:Optional[dict]=None, 
-        volumes:Optional[dict]=None
+        volumes:Optional[dict]=None,
+        network:str="warden-network"
       ):
       
         """Create a new container"""
@@ -59,16 +60,13 @@ class ContainerInstance:
                 return self.client.get(self.name)
 
         try:
-            self.client.create(name, image, tags, port_mapping, environment, volumes)
+            self.client.create(name, image, tags, port_mapping, environment, volumes, network)
         except docker.errors.APIError as e:
             logger.error(f"Error pulling image {image}:{tags}: {e}")
-            return None
-
-        try:
-            return self.client.create(name, image, tags, port_mapping, environment, volumes)
-        except docker.errors.APIError as e:
-            logger.error(f"Error creating container {name}: {e}")
-            return self.client.get(self.name)
+            raise e
+        except Exception as e:
+            logger.error(f"Error pulling image {image}:{tags}: {e}")
+            raise e
     
     def get_container_logs(self):
         """Get container logs"""
@@ -92,9 +90,9 @@ class ContainerInstance:
             logger.error(f"Error starting container {self.name}")
             return False
 
-    def container_exists(self, name:str)->bool:
+    def container_exists(self)->bool:
         """Check if container exists"""
-        return True if self.client.get(name) else False
+        return True if self.client.get(self.name) else False
     
     def stop_container(self)->bool:
         """Stop a container"""
@@ -117,3 +115,15 @@ class ContainerInstance:
         except Exception:
             logger.error(f"Error removing container {self.name}")
             return False
+
+    # def get_health(self, app_type:str="nextjs")->bool:
+    #     """Get container health"""
+    #     try:
+    #         return self.client.health(self.name)
+    #     except docker.errors.APIError as e:
+    #         logger.error(f"Error getting health for container {self.name}: {e}")
+    #         return False
+    #     except Exception:
+    #         logger.error(f"Error getting health for container {self.name}")
+    #         return False
+ 

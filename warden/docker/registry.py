@@ -26,7 +26,7 @@ class RegistryClient:
 
         self.login(self.registry, self.username, self.password)
     
-    def login(self, registry:str, username:str, password:str):
+    def login(self, registry:str, username:str|None, password:str|None):
         """Login to the registry"""
         try:
             logger.info(f"Logging in to {registry}")
