@@ -37,9 +37,10 @@ class NginxController:
         
         if self.reload_nginx():
             logger.info(f"Nginx reloaded successfully")
+            return True
         else:
             logger.error(f"Failed to reload nginx")
-            # raise Exception("Failed to reload nginx")
+            return False
 
 
     def reload_nginx(self):

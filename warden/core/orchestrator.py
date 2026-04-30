@@ -12,6 +12,12 @@ from warden.docker.registry import RegistryClient
 from warden.docker.client import DockerClient
 from warden.docker.container import ContainerInstance
 from warden.core.state import DeploymentState
+from warden.core.errors import (
+    DeploymentError,
+    ImagePullError,
+    ContainerCreateError,
+    TrafficSwitchError,
+)
 from warden.nginx.controller import NginxController
 from warden.nginx.controller import APP_STATE
 from warden.health.endpoints import HealthEndpoints
@@ -71,12 +77,14 @@ class Orchestrator:
         try:
             # 1. Pull the image from the registry
             image  = self.registry.pull(self.image_name, version)
+            if not image:
+                raise ImagePullError(f"Failed to pull image {self.image_name}:{version}")
 
             # 2. Create the idle service container
             containerInstance = self._create_container(image, version,environment=self.default_container_environment)
             if not containerInstance.container_exists():
                 logger.error(f"Failed to create container {self.idle_service}")
-                raise Exception(f"Failed to create container {self.idle_service}")
+                raise ContainerCreateError(f"Failed to create container {self.idle_service}")
 
             # 3. Start the idle service container
             self._start_idle_service(self.idle_service)
@@ -85,7 +93,8 @@ class Orchestrator:
             #self._wait_for_health(containerInstance)
 
             # 5. Switch the upstream to the idle service
-            self._switch_traffic()
+            if not self._switch_traffic():
+                raise TrafficSwitchError(f"Failed to switch traffic to {self.idle_service}")
 
             # 6. Stop the old active service
             self._stop_old_service()
@@ -95,6 +104,10 @@ class Orchestrator:
 
             # 8. Update the state
             self.state.set_active(self.idle_service)
+        except DeploymentError as e:
+            logger.error(f"Deployment failed: {e}")
+            self._rollback()
+            raise
         except Exception as e:
             logger.error(f"Failed to deploy new version {version} of {self.app_name} -> {self.idle_service}: {e}")
             self._rollback()
@@ -153,7 +166,7 @@ class Orchestrator:
         """
 
         logger.info(f"Switching traffic to {self.idle_service}")
-        self.nginx_controller.switch_upstream(self.idle_service)
+        return self.nginx_controller.switch_upstream(self.idle_service)
     
     def _stop_old_service(self):
         """
