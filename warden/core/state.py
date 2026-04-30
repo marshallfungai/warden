@@ -9,6 +9,7 @@ import logging
 from typing import Optional
 
 from warden.docker.client import DockerClient
+from warden.nginx.controller import APP_STATE
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class DeploymentState:
         self.redis_client = self._get_redis_client()
 
 
-    def _get_redis_client(self)->redis.Redis:
+    def _get_redis_client(self)->redis.Redis | None:
         """Get Redis Client"""
         try:
             docker_client = DockerClient()
@@ -36,10 +37,9 @@ class DeploymentState:
             logger.info(f"Redis URL: {redis_url}")
             return redis.Redis(host=redis_host,port=redis_port, db=redis_db)
         except Exception as e:
-            logger.error(f"Error getting Redis client: {e}")
-            raise e
+          return None
 
-    def _get_redis_key(self, key:str):
+    def _get_redis_key(self, key:APP_STATE):
         """Get Redis Key"""
         return f"{self.app_name}:{key}"
 
@@ -47,7 +47,7 @@ class DeploymentState:
         """Get Redis Value"""
         return self.redis_client.get(self._get_redis_key(key))
 
-    def set_active(self, color:str):
+    def set_active(self, color:APP_STATE):
         """Set active service color (blue or green)"""
         if self.redis.client.ping():
             self.redis_client.set(self._get_redis_key("active"), color)

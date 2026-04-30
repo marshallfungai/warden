@@ -33,15 +33,16 @@ class ContainerInstance:
         self.volumes = volumes if volumes else {}
         self.tags = tags
         self.network = network
-        logger.info("Container Instance initialized")
+        
         self._create_container(name, image, tags, recreate, port_mapping, environment, volumes, self.network)
+        logger.info(f"Container Instance {name} initialized")
 
     
     def _create_container(
         self, 
         name:str,
         image:str, 
-        tags:str,
+        tags:str = "latest",
         recreate:bool=False,
         port_mapping: Optional[Dict[int, int]] = None,
         environment:Optional[dict]=None, 
@@ -68,7 +69,7 @@ class ContainerInstance:
             logger.error(f"Error pulling image {image}:{tags}: {e}")
             raise e
     
-    def get_container_logs(self):
+    def get_logs(self):
         """Get container logs"""
         try:
             return self.client.logs(self.name)
@@ -79,7 +80,7 @@ class ContainerInstance:
             logger.error(f"Error getting logs for container {self.name}")
             return None
 
-    def start_container(self):
+    def start(self):
         """Start a container"""
         try:
             return self.client.start(self.name)
@@ -94,7 +95,7 @@ class ContainerInstance:
         """Check if container exists"""
         return True if self.client.get(self.name) else False
     
-    def stop_container(self)->bool:
+    def stop(self)->bool:
         """Stop a container"""
         try:
             return self.client.stop(self.name)
@@ -105,7 +106,7 @@ class ContainerInstance:
             logger.error(f"Error stopping container {self.name}")
             return False
 
-    def remove_container(self)-> bool:
+    def remove(self)-> bool:
         """Remove a container"""
         try:
             return self.client.remove(self.name)

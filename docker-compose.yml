@@ -29,6 +29,7 @@ services:
       - PROXY_CONTAINER_TYPE=nginx  # for now, only nginx is supported
       - UPSTREAM_CONFIG=/etc/nginx/configs/upstream.conf
       - APP_NAME=demo-app       # name of the app to track deployment state
+      - APP_TYPE=nextjs         # type of the app (nextjs, flask, django, fastapi, rust, golang, python, nodejs, express, ruby, php)
     depends_on:
       - redis
       - proxy
