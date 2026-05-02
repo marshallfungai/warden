@@ -21,3 +21,5 @@ class HealthCheckError(DeploymentError):
 
 class TrafficSwitchError(DeploymentError):
     """Raised when proxy traffic switch fails."""
+
+    

@@ -22,6 +22,7 @@ services:
       - REGISTRY_URL=repo.warden.com # MOCK private registry
       - REGISTRY_USERNAME=admin
       - REGISTRY_PASSWORD=admin123
+      - AUTOMATIC_DEPLOYMENT=true # if true, the warden will automatically deploy the new image when a new image is found in the registry
       - IMAGE_NAME=demo-app
       - IMAGE_TAG=latest # default tag to use if no version is provided
       - REDIS_DB=0

@@ -5,13 +5,12 @@ Core deployment orchestrator for Warden
 import time
 import os
 import logging
-from dataclasses import dataclass
 from typing import Optional
 
 from warden.docker.registry import RegistryClient
 from warden.docker.client import DockerClient
 from warden.docker.container import ContainerInstance
-from warden.core.state import DeploymentState
+from warden.core.state import DeploymentState, DeploymentSnapshot
 from warden.core.errors import (
     DeploymentError,
     ImagePullError,
@@ -56,14 +55,15 @@ class Orchestrator:
         self.image_password = os.getenv("REGISTRY_PASSWORD", None)
         self.default_container_environment = self._get_container_environment(self.app_type)
         # current state
-        self.active_service = self.state.get_active()
+        active_snapshot = self.state.get_active_snapshot()
+        self.active_service = active_snapshot.active if active_snapshot else self.state.get_active()
         self.idle_service = "green" if self.active_service == "blue" else "blue"
 
         logger.info(f"Initializing Orchestrator for {self.app_name}")
         logger.info(f"Active service: {self.active_service}")
         logger.info(f"Idle service: {self.idle_service}")
 
-    def deploy(self, version:str|None=None):
+    def deploy(self, version:str="latest"):
         """ 
         Deploy a new version of the service
         """
@@ -81,7 +81,7 @@ class Orchestrator:
                 raise ImagePullError(f"Failed to pull image {self.image_name}:{version}")
 
             # 2. Create the idle service container
-            containerInstance = self._create_container(image, version,environment=self.default_container_environment)
+            containerInstance = self._create_container(image, version, environment=self.default_container_environment)
             if not containerInstance.container_exists():
                 logger.error(f"Failed to create container {self.idle_service}")
                 raise ContainerCreateError(f"Failed to create container {self.idle_service}")
@@ -103,7 +103,7 @@ class Orchestrator:
             self._remove_old_service()
 
             # 8. Update the state
-            self.state.set_active(self.idle_service)
+            self._record_active_snapshot(version)
         except DeploymentError as e:
             logger.error(f"Deployment failed: {e}")
             self._rollback()
@@ -111,6 +111,7 @@ class Orchestrator:
         except Exception as e:
             logger.error(f"Failed to deploy new version {version} of {self.app_name} -> {self.idle_service}: {e}")
             self._rollback()
+            raise
         finally:
             logger.info(f"Deployment of new version {version} of {self.app_name} -> {self.idle_service} completed in {time.time() - start_time} seconds")
             logger.info("="*50)
@@ -136,14 +137,14 @@ class Orchestrator:
 
     #     container_health = containerInstance.get_health()
 
-    def _get_service(self, service_color:APP_STATE)->ContainerInstance:
+    def _get_service(self, service_color:APP_STATE, target_tag:str="latest")->ContainerInstance:
         """
         Get the service container instance
         """
         return ContainerInstance(
             name=f"{self.app_name}-{service_color}",
             image=self.image_name,
-            tags=self.image_tag,
+            tags=target_tag,
         )
 
     def _start_idle_service(self):
@@ -201,7 +202,32 @@ class Orchestrator:
         self._get_service(self.active_service).start()
         self._get_service(self.idle_service).stop()
         self._get_service(self.idle_service).remove()
-        self.state.set_active(self.active_service)
+        previous_snapshot = self.state.get_snapshot(self.active_service)
+        if previous_snapshot:
+            self.state.set_snapshot(previous_snapshot)
+        else:
+            idle = "green" if self.active_service == "blue" else "blue"
+            self.state.set_snapshot(
+                DeploymentSnapshot.minimal(self.active_service, idle)
+            )
+
+    def _record_active_snapshot(self, version: str):
+        """Persist active deployment snapshot after successful switch."""
+        container_name = f"{self.app_name}-{self.idle_service}"
+        container = self.docker_client.get(container_name)
+        image_digest = self.registry.get_image_digest(self.image_name, version) or ""
+        snapshot = DeploymentSnapshot(
+            active=self.idle_service,
+            idle=self.active_service,
+            version=version,
+            timestamp=int(time.time()),
+            image_digest=image_digest,
+            container_id=container.id if container else "",
+            container_name=container_name,
+            container_image=self.image_name,
+            container_tags=version,
+        )
+        self.state.set_snapshot(snapshot)
     
     
     def _get_container_environment(self, app_type:str)->dict:

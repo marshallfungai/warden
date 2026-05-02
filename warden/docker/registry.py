@@ -49,3 +49,17 @@ class RegistryClient:
         except docker.errors.APIError as e:
             logger.error(f"Error pulling image {image}:{tag}: {e}")
             return None
+
+    def get_image_digest(self, image:str, tag:str)->str|None:
+        """Get the digest of an image"""
+        try:
+            full_image = f"{self.registry}/{image}:{tag}"
+            image = self.client.images.get(full_image)
+            if image.attrs['RepoDigests'][0] is not None:
+                return image.attrs['RepoDigests'][0].split("@")[1]
+            else:
+                return image.id # use the image id as the digest
+        except docker.errors.APIError as e:
+            logger.error(f"Error getting image digest for {image}:{tag}: {e}")
+            return None
+    

@@ -39,7 +39,7 @@ warden/
 │   ├── core/
 │   │   ├── orchestrator.py
 │   │   ├── state.py
-│   │   └── exceptions.py
+│   │   └── errors.py
 │   ├── docker/
 │   │   ├── client.py
 │   │   ├── registry.py
@@ -76,7 +76,31 @@ warden/
 - `warden/docker/registry.py`: registry login and pull behavior
 - `warden/health/checker.py`: HTTP health checks with retry/delay logic
 - `warden/health/endpoints.py`: framework-specific health endpoint helpers
-- `warden/core/state.py`: deployment state persistence in Redis
+- `warden/core/state.py`: Redis-backed deployment snapshots (see below)
+- `warden/core/errors.py`: typed deployment failures (`DeploymentError` and subclasses)
+
+### Deployment state (snapshots)
+
+Warden treats **`DeploymentSnapshot`** as the single source of truth for what is deployed. All writes go through **`DeploymentState.set_snapshot(snapshot)`** — there is no separate “set active color only” API, so Redis keys stay consistent.
+
+- **`DeploymentSnapshot`** fields include active/idle slots (`blue` / `green`), version, timestamp, image digest, and container metadata.
+- **`DeploymentSnapshot.minimal(active, idle)`** builds a snapshot when only routing slots are known (e.g. rollback with no prior record); optional fields are empty strings / zero as documented in code.
+- **Redis keys** (prefix `{app_name}:`):
+  - `snapshot:{blue|green}` — JSON for that slot’s last recorded snapshot
+  - `active` — active color string (fast pointer)
+  - `active_snapshot` — JSON for the currently active deployment (denormalized copy for one-shot reads)
+
+Reads: **`get_active_snapshot()`**, **`get_snapshot(color)`**, **`get_active()`** (color string, derived from snapshot when present).
+
+### Typed deployment errors
+
+Orchestrator steps raise specific exceptions subclassing **`DeploymentError`** (e.g. **`ImagePullError`**, **`ContainerCreateError`**, **`TrafficSwitchError`**) so callers can handle expected failures without catching all `Exception`.
+
+## Recent changes (changelog)
+
+- **State:** Removed mixed `set_active`; persistence is **`set_snapshot` only**; added **`DeploymentSnapshot.minimal`** for color-only updates.
+- **Orchestrator:** Records full snapshots after successful deploy; rollback restores **`get_snapshot(active)`** or falls back to **`minimal`**.
+- **Nginx:** **`switch_upstream`** returns success/failure for traffic-switch error handling.
 
 ## Tech Stack
 
