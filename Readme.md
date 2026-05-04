@@ -25,7 +25,7 @@ Warden is under active development. Core modules exist and are being hardened th
 - Architecture: modular packages under `warden/`
 - Runtime target: local Docker/Docker Compose
 - Tests: basic tests present in `tests/`
-- Focus right now: API contract stability and end-to-end reliability
+- Focus right now: watcher reliability, deployment correctness, and runtime observability
 
 ## Repository Layout
 
@@ -74,10 +74,13 @@ warden/
 - `warden/docker/client.py`: low-level Docker operations (create/get/start/stop/remove/logs/network)
 - `warden/docker/container.py`: container instance lifecycle orchestration
 - `warden/docker/registry.py`: registry login and pull behavior
+- `warden/watcher/registry_watcher.py`: registry polling loop for digest change detection
+- `warden/watcher/webhook_server.py`: webhook entrypoint for deploy/rollback triggers
 - `warden/health/checker.py`: HTTP health checks with retry/delay logic
 - `warden/health/endpoints.py`: framework-specific health endpoint helpers
 - `warden/core/state.py`: Redis-backed deployment snapshots (see below)
 - `warden/core/errors.py`: typed deployment failures (`DeploymentError` and subclasses)
+- `warden/utils/logging.py`: centralized root logger setup (JSON or plain formatter)
 
 ### Deployment state (snapshots)
 
@@ -95,6 +98,24 @@ Reads: **`get_active_snapshot()`**, **`get_snapshot(color)`**, **`get_active()`*
 ### Typed deployment errors
 
 Orchestrator steps raise specific exceptions subclassing **`DeploymentError`** (e.g. **`ImagePullError`**, **`ContainerCreateError`**, **`TrafficSwitchError`**) so callers can handle expected failures without catching all `Exception`.
+
+### Logging
+
+Warden configures logging at CLI startup using **`setup_logging()`** in `warden/utils/logging.py`.
+
+- Module loggers use `logging.getLogger(__name__)` for consistent names (`warden.core.orchestrator`, `warden.docker.client`, etc.).
+- Root logging can emit either JSON logs (`JSONFormatter`) or plain text.
+- A single root handler is configured to avoid duplicate log lines when setup is called multiple times.
+
+### CLI Commands
+
+Current CLI workflow is driven by `warden/cli.py`:
+
+- `warden run` — starts registry watcher loop
+- `warden deploy <version>` — runs a targeted deployment
+- `warden rollback` — triggers rollback
+- `warden status` — prints active snapshot/status
+- `warden webhook <port>` — starts webhook server
 
 ## Recent changes (changelog)
 
@@ -129,6 +150,12 @@ docker compose up -d
 
 ```bash
 pytest
+```
+
+### 4) Run the watcher
+
+```bash
+python -m warden.cli run
 ```
 
 ## Roadmap (Near Term)

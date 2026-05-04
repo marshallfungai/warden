@@ -47,7 +47,6 @@ services:
     volumes:
       - ./warden/nginx/configs:/etc/nginx/configs
       - ./warden/nginx/nginx.conf:etc/nginx/nginx.conf
-      - ./warden/nginx/active_backend.conf:/etc/nginx/configs/active_backend.conf
     networks:
       - warden-network
     depends_on:
