@@ -29,6 +29,14 @@ class RegistryWatcher:
         """
         return self.registry.get_image_digest(self.image_name, self.image_tag)
 
+   def deploy(self):
+        """
+        Deploy the new image
+        """
+        from warden.core.orchestrator import Orchestrator
+        orchestrator = Orchestrator()
+        orchestrator.deploy(self.image_tag)
+
     def run(self):
         """
         Run the registry watcher
@@ -44,4 +52,5 @@ class RegistryWatcher:
                     self.deploy()
                 else:
                     logger.info(f"Automatic deployment is disabled. Please deploy the new image manually.")
+                    # notify the user to deploy the new image manually
             time.sleep(self.interval)

@@ -116,6 +116,13 @@ class Orchestrator:
             logger.info(f"Deployment of new version {version} of {self.app_name} -> {self.idle_service} completed in {time.time() - start_time} seconds")
             logger.info("="*50)
             logger.info(f"Deployment of new version {version} of {self.app_name} -> {self.idle_service} completed in {time.time() - start_time} seconds")
+    
+
+    def get_status(self):
+        """
+        Get the current status of the service
+        """
+        return self.state.get_status()
 
 
     def _create_container(self, image:Image, version:str):
@@ -159,7 +166,6 @@ class Orchestrator:
         else:
             logger.error(f"Idle service {self.idle_service} not found")
         logger.info(f"Idle service {self.idle_service} started")
-        
     
     def _switch_traffic(self):
         """
@@ -210,6 +216,16 @@ class Orchestrator:
             self.state.set_snapshot(
                 DeploymentSnapshot.minimal(self.active_service, idle)
             )
+    
+    def rollback(self):
+        """
+        Rollback to the previous version
+        """
+        try: self._rollback()
+          return True
+        except Exception as e:
+            logger.error(f"Failed to rollback: {e}")
+            return False
 
     def _record_active_snapshot(self, version: str):
         """Persist active deployment snapshot after successful switch."""
