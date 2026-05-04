@@ -13,12 +13,14 @@ Usage:
 import argparse
 import sys
 import os
-from pathlib import path
+import logging
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from warden.core.orchestrator import DeploymentOrchestrator
 from warden.utils.logging import setup_logging
+
+logger = logging.getLogger(__name__)
 
 def main():
     """
@@ -34,7 +36,11 @@ def main():
     rollback_parser = subparsers.add_parser("rollback", help="Rollback to the previous version of the service")
     status_parser = subparsers.add_parser("status", help="Show the current active snapshot of the service")
 
+    webhook_parser = subparsers.add_parser("webhook", help="Start the webhook server")
+    webhook_parser.add_argument("port", help="The port to start the webhook server on")
+
     args = parser.parse_args()
+    setup_logging()
 
     if args.command == "run":
         run_warden()
@@ -46,6 +52,8 @@ def main():
         show_status()
     elif args.command == "help":
         parser.print_help()
+    elif args.command == "webhook":
+        start_webhook_server(args.port)
     else:
         parser.print_help()
 
@@ -92,6 +100,18 @@ def show_status():
     status = orchestrator.get_active_snapshot()
     print(status)
 
+def start_webhook_server():
+    """
+    Start the webhook server
+    """
+    from warden.watcher.webhook_server import WebhookServer
+    webhook_server = WebhookServer(
+        port=5000,
+        on_deploy=deploy_service,
+        on_rollback=rollback_service,
+    )
+    webhook_server.run()
 
-if __name == "__main__":
+
+if __name__ == "__main__":
     main()
