@@ -6,6 +6,16 @@ operation.
 ## Overview
 Lightweight Python orchestrator for container deployment workflows, focused on health-aware rollout logic, Docker integration, and deployment state tracking.
 
+## What This Solves
+
+Warden addresses common reliability problems in small container deployments:
+
+- **Downtime during releases:** uses blue/green style traffic switching so new versions are prepared before cutover.
+- **Unsafe repeated triggers:** combines deploy locking and digest-based idempotency to avoid duplicate concurrent rollouts.
+- **Unclear rollback state:** persists deployment snapshots in Redis so active/idle state and metadata are recoverable.
+- **Operational drift:** central orchestration provides one deploy path across CLI, watcher, and webhook triggers.
+- **Low observability:** structured logging and typed deployment errors make failures easier to diagnose.
+
 ## Project Goal
 
 Warden is an engineering sandbox for building practical orchestration patterns:
@@ -81,6 +91,21 @@ warden/
 - `warden/core/state.py`: Redis-backed deployment snapshots (see below)
 - `warden/core/errors.py`: typed deployment failures (`DeploymentError` and subclasses)
 - `warden/utils/logging.py`: centralized root logger setup (JSON or plain formatter)
+
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    A[CLI / Webhook / Registry Watcher] --> B[Trigger-layer Deploy Lock]
+    B --> C[Orchestrator]
+    C --> D[RegistryClient<br/>pull + digest]
+    C --> E[ContainerInstance / DockerClient]
+    C --> F[Health Checks]
+    C --> G[NginxController<br/>switch upstream]
+    C --> H[DeploymentState<br/>Redis snapshots]
+    C --> I[Typed Errors + Rollback]
+    H --> C
+```
 
 ### Deployment state (snapshots)
 

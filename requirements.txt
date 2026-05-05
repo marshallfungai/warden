@@ -1,0 +1,5 @@
+docker
+redis
+requests
+flask
+pytest
