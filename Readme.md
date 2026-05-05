@@ -18,24 +18,25 @@ Warden addresses common reliability problems in small container deployments:
 
 ## Project Goal
 
-Warden is an engineering sandbox for building practical orchestration patterns:
+Warden is a lightweight deployment orchestrator for solo developers and small teams running containerized apps that need safer releases than plain Docker scripts, but do not want the operational overhead of Kubernetes.
 
-- Docker container lifecycle management
-- Registry authentication and image pull flows
-- Health check + retry behavior
-- Redis-backed deployment state
-- Nginx config primitives for traffic switching
+It focuses on practical controls for that middle ground:
 
-The project is designed to stay simple, inspectable, and portable.
+- blue/green-style traffic switching
+- digest-aware deployment idempotency
+- rollback backed by persisted deployment snapshots
+- unified trigger interfaces (CLI, watcher, webhook)
+
+Warden is intended as a usable deploy tool for small environments, while still serving as an engineering sandbox for orchestration patterns.
 
 ## Current Status
 
-Warden is under active development. Core modules exist and are being hardened through iterative refactoring and tests.
+Warden is functional for local/containerized environments and currently in a hardening phase.
 
 - Architecture: modular packages under `warden/`
 - Runtime target: local Docker/Docker Compose
-- Tests: basic tests present in `tests/`
-- Focus right now: watcher reliability, deployment correctness, and runtime observability
+- Current capabilities: deploy/rollback orchestration, Redis-backed deployment snapshots, trigger-layer locking, and digest-based idempotency
+- Focus right now: failure-path test coverage, trigger reliability (timeouts/retries), and end-to-end operational hardening
 
 ## Repository Layout
 
