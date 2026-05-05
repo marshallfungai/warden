@@ -5,7 +5,6 @@ Registry watcher for Warden
 import os
 import time
 import logging
-from typing import Callable
 from warden.docker.registry import RegistryClient
 
 
@@ -16,13 +15,13 @@ class RegistryWatcher:
     Watches/Polls the registry for new images and triggers a deployment if a new image is found
     """
 
-    def __init__(self, registry_url:str, image_name:str, image_tag:str = "latest", interval:int=1000):
-        self.registry = registry
-        self.interval = interval
-        self.image_name = image_name
-        self.image_tag = image_tag
-        self.current_digest = None
-        self.automatic_deployment = os.getenv("AUTOMATIC_DEPLOYMENT", "false") == "true"
+    def __init__(self, image_name:str, image_tag:str = "latest", interval:int=1000):
+        self.registry = RegistryClient()
+        self.interval = interval   # how often to poll the registry for new images
+        self.image_name = image_name # name of the image to watch
+        self.image_tag = image_tag # tag of the image to watch
+        self.current_digest = None # current digest of the image
+        self.automatic_deployment = os.getenv("AUTOMATIC_DEPLOYMENT", "false") == "true" # whether to automatically deploy the new image
 
     def _get_image_digest(self):
         """
@@ -30,7 +29,7 @@ class RegistryWatcher:
         """
         return self.registry.get_image_digest(self.image_name, self.image_tag)
 
-   def deploy(self):
+    def deploy(self):
         """
         Deploy the new image
         """
@@ -55,3 +54,6 @@ class RegistryWatcher:
                     logger.info(f"Automatic deployment is disabled. Please deploy the new image manually.")
                     # notify the user to deploy the new image manually
             time.sleep(self.interval)
+
+        
+    
