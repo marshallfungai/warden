@@ -2,6 +2,7 @@
 Registry watcher for Warden
 """
 
+import os
 import time
 import logging
 from typing import Callable

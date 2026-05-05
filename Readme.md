@@ -29,7 +29,7 @@ Warden is under active development. Core modules exist and are being hardened th
 
 ## Repository Layout
 
-Planned project layout (work in progress; some files are being added):
+Current project layout (some entries are placeholders for near-term additions):
 
 ```text
 warden/
@@ -99,6 +99,15 @@ Reads: **`get_active_snapshot()`**, **`get_snapshot(color)`**, **`get_active()`*
 
 Orchestrator steps raise specific exceptions subclassing **`DeploymentError`** (e.g. **`ImagePullError`**, **`ContainerCreateError`**, **`TrafficSwitchError`**) so callers can handle expected failures without catching all `Exception`.
 
+### Concurrency and idempotency
+
+Warden uses a two-layer safety model for deployment triggers:
+
+- **Trigger-layer deploy lock** (`cli` / webhook / watcher wrappers): prevents concurrent deploy executions.
+- **Orchestrator-level idempotency** (digest-based): skips redeploying the same artifact when digest matches prior in-flight/completed intent.
+
+This split is intentional: lock handles **"how many deploys can run now"**, while digest idempotency handles **"is this the same artifact request"**.
+
 ### Logging
 
 Warden configures logging at CLI startup using **`setup_logging()`** in `warden/utils/logging.py`.
@@ -160,10 +169,10 @@ python -m warden.cli run
 
 ## Roadmap (Near Term)
 
-- Stabilize method contracts across Docker, Registry, and State modules
-- Expand tests for health, state, and orchestrator flows
-- Add a reproducible end-to-end demo path
-- Improve logging and failure diagnostics
+- Expand unit + integration tests for deploy, rollback, watcher, and webhook failure paths.
+- Add idempotency + locking for watcher/webhook triggers to avoid duplicate concurrent deployments.
+- Add retries/timeouts around registry polling and webhook-triggered deploy actions.
+- Add a reproducible end-to-end demo flow with expected commands and outputs.
 
 ## License
 

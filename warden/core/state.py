@@ -96,6 +96,10 @@ class DeploymentState:
             return self.redis_client
         logger.error("Redis client is not connected")
         raise Exception("Redis client is not connected")
+    
+    def get_redis_client(self)->redis.Redis:
+        """Get Redis Client for use in other classes"""
+        return self._get_redis_client()
 
     def set_snapshot(self, snapshot: DeploymentSnapshot):
         """Persist a full deployment snapshot and mark it as active."""

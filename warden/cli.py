@@ -71,15 +71,26 @@ def run_warden():
     )
     registry_watcher.run()
 
-def deploy_service(version:str):
+def deploy_service(version:str="latest"):
     """
     Deploy a new version of the service
     """
     from warden.core.orchestrator import Orchestrator
+    from warden.core.coordination import Coordination
     orchestrator = Orchestrator()
-    result = orchestrator.deploy(version)
-    if not result:
+    coordination = Coordination()
+
+    # acquire a lock to prevent multiple deployments
+    lock_id = coordination.acquire_lock("deploy")
+    if not lock_id:
+        logger.error("Deployment is already in progress")
         sys.exit(1)
+    try:
+        result = orchestrator.deploy(version)
+        if not result:
+            sys.exit(1)
+    finally:
+        coordination.release_lock("deploy", lock_id)
 
 def rollback_service():
     """
@@ -100,15 +111,15 @@ def show_status():
     status = orchestrator.get_active_snapshot()
     print(status)
 
-def start_webhook_server():
+def start_webhook_server(port:int=5000):
     """
     Start the webhook server
     """
     from warden.watcher.webhook_server import WebhookServer
     webhook_server = WebhookServer(
-        port=5000,
+        port=port,
         on_deploy=deploy_service,
-        on_rollback=rollback_service,
+        on_rollback=rollback_service
     )
     webhook_server.run()
 

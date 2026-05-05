@@ -6,8 +6,9 @@ import logging
 import json
 from threading import Thread
 from typing import Callable
-
 from flask import Flask, request, jsonify
+
+from warden.core.coordination import Coordination
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +19,12 @@ class WebhookServer:
     HTTP server that accepts deployment requests from the user
     """
 
-    def __init__(self, port:int=5000, on_deploy:Callable[[str], None]=None,, on_rollback:Callable[[str], None]=None):
+    def __init__(self, port:int=5000, on_deploy:Callable[[str], None]=None, on_rollback:Callable[[str], None]=None):
         self.port = port
         self.on_deploy = on_deploy
         self.on_rollback = on_rollback
         self.server_thread = None
+        self.coordination = Coordination()
     
     def _run_server(self):
         """

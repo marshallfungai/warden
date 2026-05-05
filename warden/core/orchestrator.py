@@ -18,6 +18,7 @@ from warden.core.errors import (
     TrafficSwitchError,
 )
 from warden.nginx.controller import NginxController
+from warden.core.coordination import Coordination
 from warden.nginx.controller import APP_STATE
 from warden.health.endpoints import HealthEndpoints
 from warden.health.checker import HealthChecker
@@ -42,6 +43,7 @@ class Orchestrator:
         # dependencies
         self.registry = RegistryClient()
         self.docker_client = DockerClient()
+        self.coordination = Coordination()
         self.nginx_controller = NginxController()
         self.state = DeploymentState()
 
@@ -74,11 +76,21 @@ class Orchestrator:
         logger.info(f"Deploying new version {version} of {self.app_name} -> {self.idle_service}")
         logger.info("="*50)
 
+
         try:
             # 1. Pull the image from the registry
             image  = self.registry.pull(self.image_name, version)
             if not image:
                 raise ImagePullError(f"Failed to pull image {self.image_name}:{version}")
+
+            # check if the deployment is idempotent
+            digest = self.registry.get_image_digest(self.image_name, version)
+            idempotent_key = f"deploy:{digest}"
+            if self.coordination.is_idempotent(idempotent_key):
+                logger.info(f"Deployment {version} of {self.app_name} is already in progress")
+                return True
+
+            self.coordination.mark_idempotent(idempotent_key, ttl=300) # mark the deployment as idempotent
 
             # 2. Create the idle service container
             containerInstance = self._create_container(image, version, environment=self.default_container_environment)
@@ -104,6 +116,7 @@ class Orchestrator:
 
             # 8. Update the state
             self._record_active_snapshot(version)
+            return True
         except DeploymentError as e:
             logger.error(f"Deployment failed: {e}")
             self._rollback()
