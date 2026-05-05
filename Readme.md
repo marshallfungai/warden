@@ -35,8 +35,9 @@ Warden is functional for local/containerized environments and currently in a har
 
 - Architecture: modular packages under `warden/`
 - Runtime target: local Docker/Docker Compose
-- Current capabilities: deploy/rollback orchestration, Redis-backed deployment snapshots, trigger-layer locking, and digest-based idempotency
-- Focus right now: failure-path test coverage, trigger reliability (timeouts/retries), and end-to-end operational hardening
+- Current capabilities: deploy/rollback orchestration, Redis-backed deployment snapshots, trigger-layer 
+ locking, and digest-based idempotency
+- Focus right now: failure-path test coverage and end-to-end operational hardening
 
 ## Repository Layout
 
@@ -129,8 +130,9 @@ Orchestrator steps raise specific exceptions subclassing **`DeploymentError`** (
 
 Warden uses a two-layer safety model for deployment triggers:
 
-- **Trigger-layer deploy lock** (`cli` / webhook / watcher wrappers): prevents concurrent deploy executions.
-- **Orchestrator-level idempotency** (digest-based): skips redeploying the same artifact when digest matches prior in-flight/completed intent.
+- **Trigger-layer deploy lock** (`cli` / webhook / watcher wrappers): prevents concurrent deploy executions
+- **Orchestrator-level idempotency** (digest-based): skips redeploying the same artifact when digest matches 
+prior in-flight/completed intent.
 
 This split is intentional: lock handles **"how many deploys can run now"**, while digest idempotency handles **"is this the same artifact request"**.
 
@@ -157,6 +159,7 @@ Current CLI workflow is driven by `warden/cli.py`:
 - **State:** Removed mixed `set_active`; persistence is **`set_snapshot` only**; added **`DeploymentSnapshot.minimal`** for color-only updates.
 - **Orchestrator:** Records full snapshots after successful deploy; rollback restores **`get_snapshot(active)`** or falls back to **`minimal`**.
 - **Nginx:** **`switch_upstream`** returns success/failure for traffic-switch error handling.
+- **Registry:** Added `RegistryClient.retry_with_backoff(...)` and wired digest lookup to use callable-based retries for transient failures.
 
 ## Tech Stack
 
@@ -196,8 +199,7 @@ python -m warden.cli run
 ## Roadmap (Near Term)
 
 - Expand unit + integration tests for deploy, rollback, watcher, and webhook failure paths.
-- Add idempotency + locking for watcher/webhook triggers to avoid duplicate concurrent deployments.
-- Add retries/timeouts around registry polling and webhook-triggered deploy actions.
+- Add timeout controls for registry polling calls and webhook-triggered deploy tasks.
 - Add a reproducible end-to-end demo flow with expected commands and outputs.
 
 ## License
