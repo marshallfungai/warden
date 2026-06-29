@@ -51,5 +51,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghrc.io/marshallfungai/warden:latest
-            ghrc.io/marshallfungai/warden:${{ github.sha }}
+            ghcr.io/marshallfungai/warden:latest
+            ghcr.io/marshallfungai/warden:${{ github.sha }}
