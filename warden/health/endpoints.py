@@ -21,8 +21,11 @@ class HealthEndpoints:
     EXPRESS = "/health/"
     RUBY = "/health/"
     PHP = "/health/"
+    PHP_GATEWAY = "/health/"
+    SPRING = "/actuator/health"
+    RAILS = "/health/"
 
-    def get_health_endpoint(framework: str) -> str:
+    def get_health_endpoint(self, framework: str) -> str:
         """Get default health endpoint for a framework"""
         endpoints = {
             "nextjs": HealthEndpoints.NEXTJS,
@@ -35,7 +38,7 @@ class HealthEndpoints:
         }
         return endpoints.get(framework.lower(), HealthEndpoints.NEXTJS)
 
-    def parse_health_response(data: Dict[str, Any]) -> bool:
+    def parse_health_response(self, data: Dict[str, Any]) -> bool:
         """
         Parse health response from various frameworks.
         Returns True if healthy, False otherwise.

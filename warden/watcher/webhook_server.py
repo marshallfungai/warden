@@ -41,14 +41,14 @@ class WebhookServer:
             
             return jsonify({"status": "success", "message": "Deployment request received"}), 202
 
-        @app.route("rollback", methods=["POST"])
+        @app.route("/rollback", methods=["POST"])
         def rollback():
             logger.info("Rollback request received")
             if self.on_rollback:
                 Thread(target=self.on_rollback, args=()).start()
             return jsonify({"status": "success", "message": "Rollback request received"}), 202
 
-        @app.route("status", methods=["GET"])
+        @app.route("/status", methods=["GET"])
         def status():
             return jsonify({"status": "success", "message": "Status request received"}), 200
         

@@ -2,13 +2,13 @@
  Redis-based idempotency + lock helper for Warden
  """
 
- import os
- import uuid
- import redis
- import logging
+import os
+import uuid
+import redis
+import logging
 
- from warden.docker.client import DockerClient
- from warden.core.state import DeploymentState
+from warden.docker.client import DockerClient
+from warden.core.state import DeploymentState
 
 logger = logging.getLogger(__name__)
 

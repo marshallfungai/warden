@@ -5,7 +5,10 @@ Core deployment orchestrator for Warden
 import time
 import os
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from docker.models.images import Image
 
 from warden.docker.registry import RegistryClient
 from warden.docker.client import DockerClient
@@ -49,17 +52,18 @@ class Orchestrator:
 
         # configuration
         self.app_name = os.getenv("APP_NAME", "demo-app")
+        self.app_type = os.getenv("APP_TYPE", "nextjs")
         self.image_name = os.getenv("IMAGE_NAME", "demo-app")
         self.image_tag = os.getenv("IMAGE_TAG", "latest")
         self.image_registry = os.getenv("REGISTRY_TYPE", "dockerhub")
         self.image_registry_url = os.getenv("REGISTRY_URL", "dockerhub")
         self.image_username = os.getenv("REGISTRY_USERNAME", None)
         self.image_password = os.getenv("REGISTRY_PASSWORD", None)
-        self.default_container_environment = self._get_container_environment(self.app_type)
         # current state
         active_snapshot = self.state.get_active_snapshot()
         self.active_service = active_snapshot.active if active_snapshot else self.state.get_active()
         self.idle_service = "green" if self.active_service == "blue" else "blue"
+        self.default_container_environment = self._get_container_environment(self.app_type, self.active_service)
 
         logger.info(f"Initializing Orchestrator for {self.app_name}")
         logger.info(f"Active service: {self.active_service}")
@@ -99,7 +103,7 @@ class Orchestrator:
                 raise ContainerCreateError(f"Failed to create container {self.idle_service}")
 
             # 3. Start the idle service container
-            self._start_idle_service(self.idle_service)
+            self._start_idle_service()
 
             # 4. Wait for the idle service to be healthy
             #self._wait_for_health(containerInstance)
@@ -138,7 +142,7 @@ class Orchestrator:
         return self.state.get_status()
 
 
-    def _create_container(self, image:Image, version:str):
+    def _create_container(self, image: "Image", version:str):
         """
         Create the container
         """
@@ -234,8 +238,9 @@ class Orchestrator:
         """
         Rollback to the previous version
         """
-        try: self._rollback()
-          return True
+        try:
+            self._rollback()
+            return True
         except Exception as e:
             logger.error(f"Failed to rollback: {e}")
             return False
@@ -259,7 +264,7 @@ class Orchestrator:
         self.state.set_snapshot(snapshot)
     
     
-    def _get_container_environment(self, app_type:str)->dict:
+    def _get_container_environment(self, app_type: str, active: str) -> dict:
         """
         Get the container environment
         """

@@ -51,10 +51,10 @@ class ContainerInstance:
       ):
       
         """Create a new container"""
-        if self.container_exists(name):
+        if self.container_exists():
             if recreate:
-                self.stop_container()
-                self.remove_container()
+                self.stop()
+                self.remove()
                 logger.info(f"Removed old container {name}")
             else:
                 logger.info(f"Container {name} already exists, reusing it")
