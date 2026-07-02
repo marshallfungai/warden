@@ -48,4 +48,12 @@ Thumbs.db
 # Docker/local state
 *.tar
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+
+
+cli-output.txt
 error.txt

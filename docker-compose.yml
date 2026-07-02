@@ -18,7 +18,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./warden/nginx/configs:/etc/nginx/configs
     environment:
-      - REGISTRY_TYPE=dockerhub  # dockerhub, registry, harbor, private
+      - REGISTRY_TYPE=dockerhub # dockerhub, registry, harbor, private
       - REGISTRY_URL=repo.warden.com # MOCK private registry
       - REGISTRY_USERNAME=admin
       - REGISTRY_PASSWORD=admin123
@@ -27,10 +27,10 @@ services:
       - IMAGE_TAG=latest # default tag to use if no version is provided
       - REDIS_DB=0
       - PROXY_CONTAINER_NAME=proxy
-      - PROXY_CONTAINER_TYPE=nginx  # for now, only nginx is supported
+      - PROXY_CONTAINER_TYPE=nginx # for now, only nginx is supported
       - UPSTREAM_CONFIG=/etc/nginx/configs/upstream.conf
-      - APP_NAME=demo-app       # name of the app to track deployment state
-      - APP_TYPE=nextjs         # type of the app (nextjs, flask, django, fastapi, rust, golang, python, nodejs, express, ruby, php)
+      - APP_NAME=demo-app # name of the app to track deployment state
+      - APP_TYPE=nextjs # type of the app (nextjs, flask, django, fastapi, rust, golang, python, nodejs, express, ruby, php)
     depends_on:
       - redis
       - proxy
@@ -46,13 +46,13 @@ services:
       - "443:443"
     volumes:
       - ./warden/nginx/configs:/etc/nginx/configs
-      - ./warden/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./warden/nginx/configs/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - warden-network
     depends_on:
       - warden
     restart: unless-stopped
-  
+
   redis:
     image: redis:alpine
     container_name: redis

@@ -1,0 +1,16 @@
+# Terraform files — must be LF, state corruption risk with CRLF
+*.tf      text eol=lf
+*.tfstate text eol=lf
+*.tfvars  text eol=lf
+*.hcl     text eol=lf
+
+# Python — LF is standard
+*.py      text eol=lf
+
+# Shell scripts — LF or they won't execute
+*.sh      text eol=lf
+
+# Binary files — don't try to diff or merge
+*.png      binary
+*.jpg      binary
+*.tar      binary
